@@ -1,4 +1,4 @@
-# BatteryClock v1.3
+# BatteryClock v1.4
 
 A minimal battery status widget for [Pock](https://pock.app) that displays your MacBook's battery information in the Touch Bar.
 
@@ -22,7 +22,7 @@ A minimal battery status widget for [Pock](https://pock.app) that displays your 
 ## 📦 Installation
 
 ### Quick Install (Recommended)
-1. Download [BatteryClock-1.3.pock.zip](BatteryClock-1.3.pock.zip) directly from this repository
+1. Download [BatteryClock.pock.zip](BatteryClock.pock.zip) directly from this repository
 2. Unzip the downloaded file
 3. Double-click the `BatteryClock.pock` file
 4. Click "Install" when prompted
@@ -39,6 +39,9 @@ cd BatteryClock
 # Build the widget
 swift build -c release
 
+# Run the install script
+./install.sh
+
 # The widget will be at:
 .build/release/BatteryClock.pock
 ```
@@ -48,12 +51,11 @@ swift build -c release
 - [Pock](https://pock.app) installed
 - MacBook Pro with Touch Bar
 
-### Troubleshooting
-- If you have a previous version installed, remove it from Pock's Widget Manager before installing the new version
-- Make sure Pock is running before installing the widget
-- If the widget doesn't appear immediately, try restarting Pock
-
 ## 🔄 Updates
+
+### v1.4
+- Simplified installation
+- Robust functionality
 
 ### v1.3
 - Optimized refresh rate for better battery life
