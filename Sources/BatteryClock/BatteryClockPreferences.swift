@@ -3,7 +3,7 @@ import PockKit
 
 @objc(BatteryClockPreferences)
 class BatteryClockPreferences: NSViewController, PKWidgetPreference {
-    static var nibName: NSNib.Name = ""
+    static var nibName: NSNib.Name = "BatteryClockPreferences"
     
     weak var widget: BatteryClockWidget?
     

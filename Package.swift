@@ -24,7 +24,7 @@ let package = Package(
                 .product(name: "PockKit", package: "pockkit")
             ],
             resources: [
-                .process("Resources")
-            ]),
+                .process("Resources/Info.plist")
+            ])
     ]
 )
