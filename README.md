@@ -21,14 +21,16 @@ A minimal battery status widget for [Pock](https://pock.app) that displays your 
 
 ## 📦 Installation
 
-1. Build the widget using the instructions below
-2. Locate the widget at `.build/release/BatteryClock.pock`
-3. Double-click the .pock file to install it in Pock
-4. Enable the widget in Pock's widget manager
-5. Access preferences through Pock's widget manager to customize the display
+### Quick Install (Recommended)
+1. Download [BatteryClock-1.3.pock.zip](BatteryClock-1.3.pock.zip) directly from this repository
+2. Unzip the downloaded file
+3. Double-click the `BatteryClock.pock` file
+4. Click "Install" when prompted
+5. Open Pock's Widget Manager (click Pock icon in menu bar)
+6. Enable "BatteryClock" in the widget list
 
-## 🛠️ Building from Source
-
+### Building from Source
+If you prefer to build from source:
 ```bash
 # Clone the repository
 git clone https://github.com/ashworth3/BatteryClock.git
@@ -41,11 +43,15 @@ swift build -c release
 .build/release/BatteryClock.pock
 ```
 
-## 📋 Requirements
-
+### Requirements
 - macOS 11.0 or later
 - [Pock](https://pock.app) installed
 - MacBook Pro with Touch Bar
+
+### Troubleshooting
+- If you have a previous version installed, remove it from Pock's Widget Manager before installing the new version
+- Make sure Pock is running before installing the widget
+- If the widget doesn't appear immediately, try restarting Pock
 
 ## 🔄 Updates
 

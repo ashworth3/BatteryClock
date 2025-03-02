@@ -1,8 +1,11 @@
 .DS_Store
-/.build
-/Packages
+.build/
+*.pock
+!BatteryClock-1.3.pock.zip
+.vscode/
 xcuserdata/
 DerivedData/
+.swiftpm/
 .swiftpm/configuration/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
