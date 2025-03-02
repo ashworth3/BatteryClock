@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:BatteryClock}",
+            "name": "Debug BatteryClock",
+            "program": "${workspaceFolder:BatteryClock}/.build/debug/BatteryClock",
+            "preLaunchTask": "swift: Build Debug BatteryClock"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:BatteryClock}",
+            "name": "Release BatteryClock",
+            "program": "${workspaceFolder:BatteryClock}/.build/release/BatteryClock",
+            "preLaunchTask": "swift: Build Release BatteryClock"
+        }
+    ]
+}
