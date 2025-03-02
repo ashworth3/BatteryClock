@@ -44,12 +44,8 @@ swift build -c release
 - [Pock](https://pock.app) installed
 - MacBook Pro with Touch Bar
 
-## 👤 Author
-
-Made with ❤️ by [Andre Ashworth](https://github.com/ashworth3)
-
 ---
 
 <p align="center">
-  Made with ❤️ for the Pock community
+  Made with ❤️ by [Andre Ashworth](https://github.com/ashworth3)
 </p>
