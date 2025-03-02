@@ -1,4 +1,4 @@
-# BatteryClock
+# BatteryClock v1.2
 
 A minimal battery status widget for [Pock](https://pock.app) that displays your MacBook's battery information in the Touch Bar.
 
@@ -6,11 +6,7 @@ A minimal battery status widget for [Pock](https://pock.app) that displays your 
 
 - **Battery Status Display**
   - Battery percentage
-  - Color-coded battery level
-    - Green: > 50%
-    - Yellow: 21-50%
-    - Red: ≤ 20%
-    - Pulsing red when low (≤ 20%)
+  - Dynamic battery level icon
 
 - **Time Information**
   - On Battery: Shows estimated time remaining
@@ -20,7 +16,6 @@ A minimal battery status widget for [Pock](https://pock.app) that displays your 
 - **Battery Icon**
   - Clean, native macOS-style battery indicator
   - Color changes based on battery level
-  - Charging indicator when plugged in
 
 ## 📦 Installation
 
@@ -56,5 +51,5 @@ Made with ❤️ by [Andre Ashworth](https://github.com/ashworth3)
 ---
 
 <p align="center">
-  <a href="https://github.com/ashworth3">@ashworth3</a>
+  Engineered & Designed by <a href="https://github.com/ashworth3">@ashworth3</a>
 </p>
