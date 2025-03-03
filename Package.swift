@@ -24,7 +24,7 @@ let package = Package(
                 .product(name: "PockKit", package: "pockkit")
             ],
             resources: [
-                .process("Resources/Info.plist")
+                .process("Resources/BatteryClockPreferencesPane.xib")
             ])
     ]
 )
