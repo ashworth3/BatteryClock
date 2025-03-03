@@ -22,7 +22,7 @@ A minimal battery status widget for [Pock](https://pock.app) that displays your 
 ## 📦 Installation
 
 ### Building from Source
-If you prefer to build from source:
+
 ```bash
 # Clone the repository
 git clone https://github.com/ashworth3/BatteryClock.git
