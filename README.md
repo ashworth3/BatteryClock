@@ -21,14 +21,6 @@ A minimal battery status widget for [Pock](https://pock.app) that displays your 
 
 ## 📦 Installation
 
-### Quick Install (Recommended)
-1. Download [BatteryClock.pock.zip](BatteryClock.pock.zip) directly from this repository
-2. Unzip the downloaded file
-3. Double-click the `BatteryClock.pock` file
-4. Click "Install" when prompted
-5. Open Pock's Widget Manager (click Pock icon in menu bar)
-6. Enable "BatteryClock" in the widget list
-
 ### Building from Source
 If you prefer to build from source:
 ```bash
