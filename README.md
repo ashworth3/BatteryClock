@@ -28,9 +28,6 @@ A minimal battery status widget for [Pock](https://pock.app) that displays your 
 git clone https://github.com/ashworth3/BatteryClock.git
 cd BatteryClock
 
-# Build the widget
-swift build -c release
-
 # Run the install script
 ./install.sh
 
