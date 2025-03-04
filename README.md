@@ -1,4 +1,4 @@
-# BatteryClock v1.5
+# BatteryClock for Macbook Pro Touch Bar
 
 A minimal battery status widget for [Pock](https://pock.app) that displays your MacBook's battery information in the Touch Bar.
 
@@ -11,7 +11,7 @@ A minimal battery status widget for [Pock](https://pock.app) that displays your 
 
 ⏳ Time Tracking
 ✔ On Battery: Displays estimated time remaining (hours & minutes)
-✔ While Charging: Shows time until fully charged
+✔ While Charging: Shows time until fully charged (hours & minutes)
 ✔ Auto-hides time when data is unavailable to keep touch bar clean
 
 🎨 Customizable Battery Icons
@@ -31,8 +31,8 @@ cd BatteryClock
 # Run the install script
 ./install.sh
 
-# The widget will be at:
-.build/release/BatteryClock.pock
+# The widget will be built at:
+open .build/release/BatteryClock.pock
 ```
 
 ### Requirements
