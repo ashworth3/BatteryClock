@@ -5,97 +5,141 @@ import TinyConstraints
 
 @_exported import struct Foundation.TimeInterval
 
+@available(macOS 11.0, *)
 public class BatteryClockWidget: PKWidget {
     // MARK: - Widget Configuration
     public static let identifier = "com.andreashworth.batteryclock"
-    public var customizationLabel: String = "BatteryClock 1.5"
-    public var version = "1.5"
+    public var customizationLabel: String = "BatteryClock 1.3"
+    public var version = "1.3"
     public var view: NSView!
-    public var hasPreferences: Bool { return false }
+    public var hasPreferences: Bool { return true }
     
-    // MARK: - UI Elements
-    private lazy var stackView: NSStackView = {
-        let stack = NSStackView()
-        stack.orientation = .horizontal
-        stack.spacing = 4
-        stack.alignment = .centerY
-        return stack
-    }()
+    // MARK: - UI Components
+    private var label: NSTextField!
+    private var batteryIcon: NSImageView!
+    private var stackView: NSStackView!
     
-    private lazy var batteryIcon: NSImageView = {
-        let icon = NSImageView()
-        icon.imageScaling = .scaleProportionallyDown
-        return icon
-    }()
+    // MARK: - Battery Info
+    private var updateTimer: Timer?
+    private let powerSource = IOPSCopyPowerSourcesInfo().takeRetainedValue()
+    private let powerSourcesList = IOPSCopyPowerSourcesList(IOPSCopyPowerSourcesInfo().takeRetainedValue()).takeRetainedValue() as Array
+    private let updateInterval: TimeInterval = 3  // Update every 3 seconds - balanced between responsiveness and battery life
     
-    private lazy var label: NSTextField = {
-        let label = NSTextField(labelWithString: "")
-        label.alignment = .left
-        label.textColor = .white
-        label.font = .systemFont(ofSize: 12)
-        return label
-    }()
+    // MARK: - User Preferences
+    internal var showTimeRemaining: Bool {
+        get { return UserDefaults.standard.bool(forKey: "showTimeRemaining") }
+        set { UserDefaults.standard.set(newValue, forKey: "showTimeRemaining") }
+    }
     
-    // MARK: - State
-    internal var useMacOSStyle: Bool = true
-    internal var showPercentage: Bool = true
-    internal var showTimeRemaining: Bool = true
-    private var lastPercentage: Int = -1
-    private var lastChargingState: Bool = false
-    private var lastChargedState: Bool = false
-    private var powerSourceCallback: CFRunLoopSource?
-    private var lastUpdateTime: TimeInterval = 0
-    private var minimumUpdateInterval: TimeInterval = 0.1
+    internal var showPercentage: Bool {
+        get { return UserDefaults.standard.bool(forKey: "showPercentage") }
+        set { UserDefaults.standard.set(newValue, forKey: "showPercentage") }
+    }
+    
+    internal var useMacOSStyle: Bool {
+        get { return UserDefaults.standard.bool(forKey: "useMacOSStyle") }
+        set { UserDefaults.standard.set(newValue, forKey: "useMacOSStyle") }
+    }
+    
+    // MARK: - Widget Icon
+    public var icon: NSImage {
+        let image = NSImage(size: NSSize(width: 22, height: 12))
+        image.lockFocus()
+        
+        // Draw battery outline
+        let frame = NSRect(x: 0, y: 0, width: 20, height: 12)
+        let path = NSBezierPath(roundedRect: frame, xRadius: 2, yRadius: 2)
+        NSColor.white.withAlphaComponent(0.8).setStroke()
+        path.lineWidth = 1
+        path.stroke()
+        
+        // Draw battery tip
+        let tipFrame = NSRect(x: 20, y: 4, width: 2, height: 4)
+        NSColor.white.withAlphaComponent(0.8).setFill()
+        NSBezierPath(rect: tipFrame).fill()
+        
+        // Draw battery level - red on left side
+        let redLevelFrame = NSRect(x: 1, y: 1, width: 4, height: 10)
+        NSColor.red.setFill()
+        NSBezierPath(rect: redLevelFrame).fill()
+        
+        image.unlockFocus()
+        return image
+    }
+    
+    // MARK: - Preferences
+    public var preferenceViewController: PKWidgetPreference? {
+        let preferences: BatteryClockPreferencesPane = BatteryClockPreferencesPane()
+        preferences.widget = self
+        return preferences
+    }
     
     // MARK: - Initialization
     public required init() {
-        view = NSView()
+        initializeDefaultPreferences()
+        self.view = NSView()
         setupUI()
-        registerForPowerSourceChanges()
+    }
+    
+    private func initializeDefaultPreferences() {
+        guard !UserDefaults.standard.bool(forKey: "preferencesInitialized") else { return }
         
-        // Initial update
-        updateBatteryInfo()
-        
-        // Backup timer for reliability (every 30 seconds)
-        DispatchQueue.global(qos: .utility).async { [weak self] in
-            while true {
-                Thread.sleep(forTimeInterval: 30)
-                DispatchQueue.main.async {
-                    self?.updateBatteryInfo()
-                }
-            }
-        }
+        UserDefaults.standard.set(true, forKey: "showTimeRemaining")
+        UserDefaults.standard.set(true, forKey: "showPercentage")
+        UserDefaults.standard.set(true, forKey: "useMacOSStyle")
+        UserDefaults.standard.set(true, forKey: "preferencesInitialized")
     }
     
     deinit {
         NotificationCenter.default.removeObserver(self)
-        if let source = powerSourceCallback {
-            CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, CFRunLoopMode.defaultMode)
-        }
+        stopUpdatingBatteryInfo()
     }
     
-    private func registerForPowerSourceChanges() {
-        let powerSourceCallback: IOPowerSourceCallbackType = { context in
-            let widget = Unmanaged<BatteryClockWidget>.fromOpaque(context!).takeUnretainedValue()
-            DispatchQueue.main.async {
-                widget.updateBatteryInfo()  // Direct call to update
-            }
-        }
-        
-        let runLoopSource = IOPSNotificationCreateRunLoopSource(powerSourceCallback, Unmanaged.passUnretained(self).toOpaque())
-        if let source = runLoopSource?.takeRetainedValue() {
-            CFRunLoopAddSource(CFRunLoopGetCurrent(), source, CFRunLoopMode.defaultMode)
-            self.powerSourceCallback = source
-        }
-    }
-    
+    // MARK: - UI Setup
     private func setupUI() {
-        // Add views to stack
+        setupStackView()
+        setupBatteryIcon()
+        setupLabel()
+        setupLayout()
+    }
+    
+    private func setupStackView() {
+        stackView = NSStackView()
+        stackView.orientation = .horizontal
+        stackView.spacing = 4
+        stackView.alignment = .centerY
+        stackView.distribution = .fill
+    }
+    
+    private func setupBatteryIcon() {
+        batteryIcon = NSImageView()
+        batteryIcon.imageScaling = .scaleProportionallyDown
+        batteryIcon.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            batteryIcon.widthAnchor.constraint(equalToConstant: 22),
+            batteryIcon.heightAnchor.constraint(equalToConstant: 12)
+        ])
+    }
+    
+    private func setupLabel() {
+        label = NSTextField(labelWithString: "")
+        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.textColor = .white
+        label.alignment = .left
+        label.isEditable = false
+        label.isBordered = false
+        label.backgroundColor = .clear
+    }
+    
+    private func setupLayout() {
         stackView.addArrangedSubview(batteryIcon)
         stackView.addArrangedSubview(label)
         
-        // Set main view
-        self.view = stackView
+        view.addSubview(stackView)
+        stackView.centerInSuperview()
+        stackView.edgesToSuperview(insets: .uniform(4))
+        
+        view.frame.size = NSSize(width: 120, height: 30)
     }
     
     // MARK: - Battery Icon Management
@@ -130,71 +174,88 @@ public class BatteryClockWidget: PKWidget {
         let levelFrame = NSRect(x: 1, y: 1, width: levelWidth, height: 10)
         
         // Dynamic color and pulse effects
+        let levelColor: NSColor
         let pulseFrequency: Double = 2.0 // Adjust for faster/slower pulsing
         let currentTime = Date().timeIntervalSince1970
         let pulseValue = (sin(currentTime * pulseFrequency) + 1) / 2 // Normalized pulse between 0 and 1
         
-        // Draw charging indicator (lightning bolt) when charging
-        if isCharging {
-            // Charging animation - yellow-green pulsing
-            let baseGreen = 0.8 + (pulseValue * 0.2)
-            let levelColor = NSColor(calibratedRed: 0.8, green: baseGreen, blue: 0.0, alpha: 1.0)
+        if isCharged {
+            // Fully charged - bright green with subtle pulse
+            let brightness = 0.9 + (pulseValue * 0.1)
+            levelColor = NSColor(calibratedRed: 0.0, green: CGFloat(brightness), blue: 0.0, alpha: 1.0)
+        } else if isCharging {
+            // Charging animation - moving gradient
+            let gradientPhase = (currentTime * 2).truncatingRemainder(dividingBy: 2.0)
+            let baseGreen = 0.6 + (pulseValue * 0.3)
+            levelColor = NSColor(calibratedRed: 0.2, green: CGFloat(baseGreen), blue: 0.2, alpha: 1.0)
             
-            // Create gradient with dynamic effect
-            let gradientLocations: [CGFloat] = [0.0, 1.0]
-            let gradientColors = [levelColor, levelColor.withAlphaComponent(0.8)]
-            let gradient = NSGradient(colors: gradientColors, atLocations: gradientLocations, colorSpace: NSColorSpace.deviceRGB)!
-            gradient.draw(in: levelFrame, angle: 360.0 * pulseValue)
+            // Add charging wave effect
+            let waveWidth = levelFrame.width
+            let wavePhase = gradientPhase * Double.pi * 2
+            let wavePath = NSBezierPath()
+            wavePath.move(to: NSPoint(x: levelFrame.minX, y: levelFrame.minY))
             
+            for x in stride(from: 0, through: waveWidth, by: 1) {
+                let normalizedX = x / waveWidth
+                let y = sin(normalizedX * 4 * Double.pi + wavePhase) * 2 + 5 // Wave amplitude = 2
+                wavePath.line(to: NSPoint(x: levelFrame.minX + x, y: levelFrame.minY + y))
+            }
+            
+            wavePath.line(to: NSPoint(x: levelFrame.maxX, y: levelFrame.minY))
+            wavePath.close()
+            
+            NSColor(calibratedRed: 0.3, green: 0.8, blue: 0.3, alpha: 0.3).setFill()
+            wavePath.fill()
+        } else if level <= 10 {
+            // Critical - pulsing red
+            let redPulse = 0.7 + (pulseValue * 0.3)
+            levelColor = NSColor(calibratedRed: CGFloat(redPulse), green: 0.0, blue: 0.0, alpha: 1.0)
+        } else if level <= 20 {
+            // Low - orange with subtle pulse
+            let orangePulse = 0.8 + (pulseValue * 0.2)
+            levelColor = NSColor(calibratedRed: CGFloat(orangePulse), green: 0.4, blue: 0.0, alpha: 1.0)
+        } else if level <= 50 {
+            levelColor = NSColor(calibratedRed: 0.9, green: 0.8, blue: 0.0, alpha: 1.0)
+        } else {
+            levelColor = NSColor(calibratedRed: 0.0, green: 0.8, blue: 0.0, alpha: 1.0)
+        }
+        
+        // Create gradient with dynamic effect
+        let gradientLocations: [CGFloat] = [0.0, 1.0]
+        let gradientColors = [levelColor, levelColor.withAlphaComponent(0.8)]
+        let gradient = NSGradient(colors: gradientColors, atLocations: gradientLocations, colorSpace: NSColorSpace.deviceRGB)!
+        gradient.draw(in: levelFrame, angle: isCharging ? (360.0 * pulseValue) : 90)
+        
+        // Draw charging indicator
+        if isCharging || isCharged {
             context.saveGState()
             
-            // Create lightning bolt path
+            // Create dynamic bolt path
             let boltPath = NSBezierPath()
-            let boltScale = 1.0 + (pulseValue * 0.3) // More pronounced pulsing
-            let centerX = levelFrame.midX
-            let centerY = levelFrame.midY
+            let boltScale = 1.0 + (pulseValue * 0.2) // Dynamic scaling
+            let centerX = 11.0
+            let centerY = 6.0
             
-            // Draw a larger lightning bolt
-            boltPath.move(to: NSPoint(x: centerX - 5 * boltScale, y: centerY + 4))
+            boltPath.move(to: NSPoint(x: centerX - 2 * boltScale, y: centerY + 3 * boltScale))
+            boltPath.line(to: NSPoint(x: centerX + 2 * boltScale, y: centerY))
             boltPath.line(to: NSPoint(x: centerX, y: centerY))
-            boltPath.line(to: NSPoint(x: centerX - 2, y: centerY))
-            boltPath.line(to: NSPoint(x: centerX + 5 * boltScale, y: centerY - 4))
+            boltPath.line(to: NSPoint(x: centerX + 2 * boltScale, y: centerY - 3 * boltScale))
+            boltPath.line(to: NSPoint(x: centerX - 2 * boltScale, y: centerY))
+            boltPath.line(to: NSPoint(x: centerX, y: centerY))
             boltPath.close()
             
-            // Enhanced glow effect
-            let boltColor = NSColor(calibratedRed: 1.0, green: 0.9, blue: 0.0, alpha: 1.0)
-            context.setShadow(offset: .zero, blur: 4 + pulseValue * 2, color: boltColor.cgColor)
-            
+            // Dynamic glow effect
+            let boltColor = isCharging ? NSColor.yellow : NSColor.white
+            let glowRadius = isCharging ? (2 + pulseValue * 2) : 2
+            context.setShadow(offset: .zero, blur: glowRadius, color: boltColor.withAlphaComponent(0.9).cgColor)
             boltColor.setFill()
             boltPath.fill()
             
             context.restoreGState()
-        } else {
-            // Normal battery colors
-            let levelColor: NSColor
-            if isCharged {
-                levelColor = NSColor(calibratedRed: 0.2, green: 0.9, blue: 0.2, alpha: 1.0)
-            } else if level <= 10 {
-                let redPulse = 0.7 + (pulseValue * 0.3)
-                levelColor = NSColor(calibratedRed: CGFloat(redPulse), green: 0.0, blue: 0.0, alpha: 1.0)
-            } else if level <= 20 {
-                levelColor = NSColor(calibratedRed: 0.9, green: 0.4, blue: 0.0, alpha: 1.0)
-            } else {
-                levelColor = NSColor(calibratedRed: 0.2, green: 0.8, blue: 0.2, alpha: 1.0)
-            }
-            
-            let gradientLocations: [CGFloat] = [0.0, 1.0]
-            let gradientColors = [levelColor, levelColor.withAlphaComponent(0.8)]
-            let gradient = NSGradient(colors: gradientColors, atLocations: gradientLocations, colorSpace: NSColorSpace.deviceRGB)!
-            gradient.draw(in: levelFrame, angle: 90)
         }
         
         image.unlockFocus()
-        
-        // Update the image immediately on the main thread
-        DispatchQueue.main.async {
-            self.batteryIcon.image = image
-        }
+        batteryIcon.image = image
     }
     
     private func updateEmojiBatteryIcon(level: Int, isCharging: Bool, isCharged: Bool = false) {
@@ -233,102 +294,136 @@ public class BatteryClockWidget: PKWidget {
         batteryIcon.image = image
     }
     
-    // MARK: - Battery Info Update
-    internal func updateBatteryInfo() {
-        guard let info = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
-              let sources = IOPSCopyPowerSourcesList(info)?.takeRetainedValue() as? [CFTypeRef],
-              let battery = sources.first,
-              let description = IOPSGetPowerSourceDescription(info, battery)?.takeUnretainedValue() as? [String: Any] else { return }
-        
-        let isCharging = description[kIOPSIsChargingKey] as? Bool ?? false
-        let currentCapacity = description[kIOPSCurrentCapacityKey] as? Int ?? 0
-        let timeToEmpty = description[kIOPSTimeToEmptyKey] as? Int ?? -1
-        let isCharged = description[kIOPSIsChargedKey] as? Bool ?? false
-        
-        // Update state
-        lastPercentage = currentCapacity
-        lastChargingState = isCharging
-        lastChargedState = isCharged
-        lastUpdateTime = Date().timeIntervalSince1970
-        
-        // Update UI on main thread with high priority
-        DispatchQueue.main.async(qos: .userInteractive) { [weak self] in
-            guard let self = self else { return }
-            
-            // Update battery icon
-            self.updateBatteryIcon(level: currentCapacity, isCharging: isCharging, isCharged: isCharged)
-            
-            // Build status text
-            var statusText = ""
-            
-            // Add percentage
-            if self.showPercentage {
-                statusText += "\(currentCapacity)%"
-            }
-            
-            // Add charging indicator if charging
-            if isCharging {
-                statusText += " ⚡️"
-            }
-            
-            // Only show time remaining when not charging
-            if self.showTimeRemaining && !isCharging && timeToEmpty > 0 {
-                let (hours, mins) = self.formatTime(minutes: timeToEmpty)
-                if hours > 0 {
-                    statusText += " (\(hours)h \(mins)m)"
-                } else {
-                    statusText += " (\(mins)m)"
-                }
-            }
-            
-            // Ensure text updates on main thread
-            self.label.stringValue = statusText
-            
-            // Update stack view size
-            let labelSize = statusText.size(withAttributes: [.font: self.label.font!])
-            self.view.frame.size = NSSize(width: self.batteryIcon.frame.width + labelSize.width + 8,
-                                        height: 30)
-        }
-    }
-    
-    private func formatTime(minutes: Int) -> (hours: Int, minutes: Int) {
-        let hours = minutes / 60
-        let remainingMinutes = minutes % 60
-        return (hours, remainingMinutes)
-    }
-    
     // MARK: - Widget Lifecycle
     public func widgetDidLoad() {
         updateBatteryInfo()
     }
     
     public func viewWillAppear() {
-        updateBatteryInfo()
+        startUpdatingBatteryInfo()
     }
     
     public func viewDidAppear() {
         updateBatteryInfo()
     }
     
-    public func viewWillDisappear() {}
+    public func viewWillDisappear() {
+        stopUpdatingBatteryInfo()
+    }
     
     public func viewDidDisappear() {}
     
-    // MARK: - Preferences
-    public var preferenceViewController: PKWidgetPreference? {
-        let preferences = BatteryClockPreferencesPane()
-        preferences.widget = self
-        return preferences
+    // MARK: - Timer Management
+    private func startUpdatingBatteryInfo() {
+        updateTimer = Timer.scheduledTimer(withTimeInterval: updateInterval, repeats: true) { [weak self] _ in
+            self?.updateBatteryInfo()
+        }
+        updateTimer?.fire()
     }
     
-    // MARK: - Touch Bar Events
-    public func touchBar(_ touchBar: NSTouchBar, makeItemForIdentifier identifier: NSTouchBarItem.Identifier) -> NSTouchBarItem? {
-        if identifier.rawValue == BatteryClockWidget.identifier {
-            let customViewItem = NSCustomTouchBarItem(identifier: identifier)
-            customViewItem.view = self.view
-            customViewItem.customizationLabel = self.customizationLabel
-            return customViewItem
+    private func stopUpdatingBatteryInfo() {
+        updateTimer?.invalidate()
+        updateTimer = nil
+    }
+    
+    func restartTimer() {
+        stopUpdatingBatteryInfo()
+        startUpdatingBatteryInfo()
+    }
+    
+    // MARK: - Battery Info Update
+    internal func updateBatteryInfo() {
+        guard let powerSource = powerSourcesList.first,
+              let powerSourceDesc = IOPSGetPowerSourceDescription(self.powerSource, powerSource).takeUnretainedValue() as? [String: Any] else {
+            label.stringValue = "No battery info"
+            return
         }
-        return nil
+        
+        let batteryInfo = getBatteryInfo(from: powerSourceDesc)
+        updateDisplay(with: batteryInfo)
+    }
+    
+    private struct BatteryInfo {
+        let level: Int
+        let isACPowered: Bool
+        let isCharging: Bool
+        let isCharged: Bool
+        let timeRemaining: TimeInterval
+        let timeToFullCharge: TimeInterval?
+    }
+    
+    private func getBatteryInfo(from powerSourceDesc: [String: Any]) -> BatteryInfo {
+        let timeRemaining = IOPSGetTimeRemainingEstimate()
+        let batteryLevel = powerSourceDesc[kIOPSCurrentCapacityKey] as? Int ?? 0
+        
+        let powerSourceState = powerSourceDesc[kIOPSPowerSourceStateKey] as? String
+        let isACPowered = powerSourceState == kIOPSACPowerValue
+        let isCharging = isACPowered && (powerSourceDesc[kIOPSIsChargingKey] as? Bool == true)
+        let isCharged = isACPowered && batteryLevel >= 95
+        
+        let timeToFullCharge: TimeInterval? = {
+            if isCharging, let timeToFull = powerSourceDesc[kIOPSTimeToFullChargeKey] as? Int, timeToFull != -1 {
+                return TimeInterval(timeToFull * 60)
+            }
+            return nil
+        }()
+        
+        return BatteryInfo(
+            level: batteryLevel,
+            isACPowered: isACPowered,
+            isCharging: isCharging,
+            isCharged: isCharged,
+            timeRemaining: timeRemaining,
+            timeToFullCharge: timeToFullCharge
+        )
+    }
+    
+    private func updateDisplay(with info: BatteryInfo) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            self.updateBatteryIcon(level: info.level, isCharging: info.isCharging || info.isCharged, isCharged: info.isCharged)
+            self.batteryIcon.isHidden = false
+            
+            let displayString = self.createDisplayString(from: info)
+            self.updateLabelAndSize(with: displayString)
+        }
+    }
+    
+    private func createDisplayString(from info: BatteryInfo) -> String {
+        var components: [String] = []
+        
+        if showPercentage {
+            components.append("\(info.level)%")
+        }
+        
+        if showTimeRemaining {
+            if info.isCharging, let timeToFull = info.timeToFullCharge {
+                let (hours, minutes) = getHoursAndMinutes(from: timeToFull)
+                components.append("(⚡️ \(hours)h \(minutes)m)")
+            } else if !info.isACPowered && info.timeRemaining != kIOPSTimeRemainingUnknown {
+                let (hours, minutes) = getHoursAndMinutes(from: info.timeRemaining)
+                components.append("(\(hours)h \(minutes)m)")
+            }
+        }
+        
+        return components.joined(separator: " ")
+    }
+    
+    private func getHoursAndMinutes(from timeInterval: TimeInterval) -> (hours: Int, minutes: Int) {
+        let hours = Int(timeInterval / 3600)
+        let minutes = Int((timeInterval.truncatingRemainder(dividingBy: 3600)) / 60)
+        return (hours, minutes)
+    }
+    
+    private func updateLabelAndSize(with displayString: String) {
+        let attributedString = NSAttributedString(string: displayString, attributes: [
+            .font: label.font as Any
+        ])
+        let textWidth = attributedString.size().width
+        let requiredWidth = textWidth + (batteryIcon.isHidden ? 0 : 26) + 8
+        
+        label.stringValue = displayString
+        view.frame.size = NSSize(width: requiredWidth, height: 30)
     }
 } 
