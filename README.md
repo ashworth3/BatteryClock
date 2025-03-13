@@ -31,8 +31,8 @@ open .build/release/BatteryClock.pock
 - MacBook Pro with Touch Bar
 
 ## 🔄 Latest Update (v1.5)
-Enhanced update responsiveness using feature power notifications
-Optimized performance for even lower resource usage
+- Enhanced update responsiveness using feature power notifications
+- Optimized performance for even lower resource usage
 
 ## 💡 Why It Matters
 BatteryClock provides a seamless and distraction-free way to track your MacBook’s battery life directly from the Touch Bar, keeping essential info at your fingertips without interrupting your workflow.
