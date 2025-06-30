@@ -13,7 +13,7 @@ A sleek, minimal Touch Bar widget for [Pock](https://pock.app) that displays cur
 
 ## Installation
 
-### Option 1 (Recommended): Build from Source
+### Option 1: Build from Source (Recommended)
 
 ```bash
 # Clone the repository
