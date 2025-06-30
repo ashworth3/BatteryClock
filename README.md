@@ -1,4 +1,4 @@
-# BatteryClock Utility for Macbook Pro Touch Bar
+# BatteryClock Utility for macOS
 
 A sleek, minimal Touch Bar widget for [Pock](https://pock.app) that displays current battery percentage and time remaining estimate whether charging or discharging right on your MacBook Pro Touch Bar.
 
