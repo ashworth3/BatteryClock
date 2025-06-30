@@ -13,15 +13,7 @@ A sleek, minimal Touch Bar widget for [Pock](https://pock.app) that displays cur
 
 ## Installation
 
-### Option 1: Download Prebuilt Widget
-
-> 💾 Download the latest precompiled `.pock` widget directly from the repository:  
-> 👉 [BatteryClock.pock.zip](https://github.com/ashworth3/BatteryClock/blob/main/BatteryClock.pock.zip)
-
-1. Download the ZIP file and unzip it.
-2. Double-click `BatteryClock.pock` to add as a widget.
-
-### Option 2: Build from Source
+### Option 1 (Recommended): Build from Source
 
 ```bash
 # Clone the repository
@@ -34,6 +26,14 @@ cd BatteryClock
 # Open the built widget:
 open .build/release/BatteryClock.pock
 ```
+
+### Option 2: Download Prebuilt Widget
+
+> 💾 Download the latest precompiled `.pock` widget directly from releases:  
+> 👉 [BatteryClock.pock.zip](https://github.com/user-attachments/files/20972364/BatteryClock.pock.zip)
+
+1. Download the ZIP file and unzip it.
+2. Double-click `BatteryClock.pock` to add as a widget.
 
 ### Requirements
 - macOS 11.0 or later
