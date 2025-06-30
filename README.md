@@ -1,17 +1,27 @@
-# BatteryClock for Macbook Pro Touch Bar
+# BatteryClock Utility for Macbook Pro Touch Bar
 
-A sleek and minimal battery status widget for [Pock](https://pock.app), designed to display real-time battery percentage and estimated time remaining in your MacBook's Touch Bar.
+A sleek, minimal Touch Bar widget for [Pock](https://pock.app) that displays current battery percentage and time remaining estimate whether charging or discharging right on your MacBook Pro Touch Bar.
 
-## ✨ Features
+## Features
 
-- **Real-time Battery Monitoring**: Displays percentage and charge status dynamically.
-- **Time Estimation**: Shows estimated battery life remaining (on battery) or time until full charge (while plugged in).
-- **Smart Refresh System**: Optimized for minimal resource usage.
-- **Sleek macOS-style Icons**: Dynamic battery indicator with a clean, native look.
+- 🔋 **Live Battery Info** – Always shows the current percentage and charging status.
+- ⏱ **Time Estimates** – See how long until empty or fully charged.
+- ⚙️ **Smart Refresh** – Minimal CPU usage with intelligent updates.
+- 🎨 **macOS-Style Icons** – Clean, native-feeling battery indicators with dynamic charge visuals.
 
-## 📦 Installation
+---
 
-### Building from Source
+## Installation
+
+### Option 1: Download Prebuilt Widget
+
+> 💾 Download the latest precompiled `.pock` widget directly from the repository:  
+> 👉 [BatteryClock.pock.zip](https://github.com/ashworth3/BatteryClock/blob/main/BatteryClock.pock.zip)
+
+1. Download the ZIP file and unzip it.
+2. Double-click `BatteryClock.pock` to add as a widget.
+
+### Option 2: Build from Source
 
 ```bash
 # Clone the repository
@@ -21,14 +31,14 @@ cd BatteryClock
 # Run the install script
 ./install.sh
 
-# The widget will be built at:
+# Open the built widget:
 open .build/release/BatteryClock.pock
 ```
 
 ### Requirements
 - macOS 11.0 or later
 - [Pock](https://pock.app) installed
-- MacBook Pro with Touch Bar
+- Apple MacBook Pro with Touch Bar
 
 ## 📸 Preview
 
@@ -39,10 +49,10 @@ open .build/release/BatteryClock.pock
 ![Charging Preview](preview2.jpg)
 
 ## 💡 What This Does
-BatteryClock provides a seamless and distraction-free way to track your MacBook’s battery life directly from the Touch Bar, keeping essential info at your fingertips without interrupting your workflow.
+BatteryClock provides a seamless and distraction-free way to track your MacBook’s battery life directly from the Touch Bar, keeping battery info at your fingertips without interrupting your workflow.
 
 ---
 
 <p align="center">
-  Engineered by <a href="https://github.com/ashworth3">@ashworth3</a>
+  Created by <a href="https://github.com/ashworth3">@ashworth3</a>
 </p>
